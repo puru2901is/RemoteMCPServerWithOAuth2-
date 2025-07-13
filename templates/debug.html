@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>OAuth Debug</title>
+</head>
+<body>
+    <h1>OAuth Debug Information</h1>
+    <div id="debug-info"></div>
+    
+    <script>
+        // Get the current URL and parse it
+        const url = new URL(window.location.href);
+        const params = new URLSearchParams(url.search);
+        
+        let debugInfo = '<h2>Current URL Parameters:</h2><ul>';
+        for (const [key, value] of params.entries()) {
+            debugInfo += `<li><strong>${key}:</strong> ${value}</li>`;
+        }
+        debugInfo += '</ul>';
+        
+        // If we have an error, show it
+        if (params.get('error')) {
+            debugInfo += `<h2 style="color: red;">Error: ${params.get('error')}</h2>`;
+            if (params.get('error_description')) {
+                debugInfo += `<p>${params.get('error_description')}</p>`;
+            }
+        }
+        
+        // If we have a code, show success
+        if (params.get('code')) {
+            debugInfo += '<h2 style="color: green;">Success! Authorization code received.</h2>';
+            debugInfo += `<p>Code: ${params.get('code').substring(0, 20)}...</p>`;
+        }
+        
+        document.getElementById('debug-info').innerHTML = debugInfo;
+    </script>
+</body>
+</html>

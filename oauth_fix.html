@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>MCP Server Token Generator</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .container {
+            background: #f8f9fa;
+            padding: 30px;
+            border-radius: 10px;
+            border: 1px solid #dee2e6;
+        }
+        .success {
+            color: #28a745;
+            font-weight: bold;
+        }
+        .error {
+            color: #dc3545;
+            font-weight: bold;
+        }
+        .token-display {
+            background: #fff;
+            border: 2px solid #007bff;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            word-break: break-all;
+            position: relative;
+        }
+        .copy-btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+        .copy-btn:hover {
+            background: #0056b3;
+        }
+        .instructions {
+            background: #e7f3ff;
+            border-left: 4px solid #007bff;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .warning {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        button {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        button:hover {
+            background: #218838;
+        }
+        .code-block {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 10px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔑 MCP Server Token Generator</h1>
+        
+        <div class="warning">
+            <h3>⚠️ OAuth "digest" Error Workaround</h3>
+            <p>If you're seeing "Cannot read properties of undefined (reading 'digest')" in the MCP Inspector, 
+            this is a browser compatibility issue with the Web Crypto API. Use the direct token method below instead.</p>
+        </div>
+
+        <div class="instructions">
+            <h3>📋 Quick Setup Instructions</h3>
+            <ol>
+                <li>Click "Generate Token" below</li>
+                <li>Copy the generated token</li>
+                <li>Use it directly in your MCP client instead of OAuth</li>
+            </ol>
+        </div>
+
+        <button onclick="generateToken()">🚀 Generate Direct Token</button>
+        <button onclick="testConnection()">🧪 Test Server Connection</button>
+        
+        <div id="result"></div>
+        
+        <div id="tokenSection" style="display: none;">
+            <h3>🎉 Your Access Token:</h3>
+            <div id="tokenDisplay" class="token-display"></div>
+            <button class="copy-btn" onclick="copyToken()">📋 Copy Token</button>
+            
+            <div class="instructions">
+                <h4>🔧 How to Use in MCP Inspector:</h4>
+                <div class="code-block">
+<strong>Server URL:</strong> http://localhost:8000/mcp/<br>
+<strong>Authentication:</strong> Manual/Bearer Token<br>
+<strong>Token:</strong> [paste the token above]
+                </div>
+                
+                <h4>🔧 VS Code Configuration:</h4>
+                <div class="code-block" id="vscodeConfig"></div>
+            </div>
+        </div>
+
+        <div id="testSection" style="display: none;">
+            <h3>🧪 Server Test Results:</h3>
+            <div id="testResults"></div>
+        </div>
+    </div>
+
+    <script>
+        let currentToken = '';
+        
+        async function generateToken() {
+            try {
+                document.getElementById('result').innerHTML = '<div class="success">⏳ Generating token...</div>';
+                
+                const response = await fetch('/mcp-token');
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                currentToken = data.access_token;
+                
+                document.getElementById('tokenDisplay').textContent = currentToken;
+                document.getElementById('tokenSection').style.display = 'block';
+                
+                // Update VS Code config
+                const vscodeConfig = `"mcp": {
+    "servers": {
+        "notes-mcp": {
+            "url": "http://localhost:8000/mcp/",
+            "headers": {
+                "Authorization": "Bearer ${currentToken}"
+            }
+        }
+    }
+}`;
+                document.getElementById('vscodeConfig').textContent = vscodeConfig;
+                
+                document.getElementById('result').innerHTML = '<div class="success">✅ Token generated successfully!</div>';
+                
+            } catch (error) {
+                document.getElementById('result').innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+            }
+        }
+        
+        async function testConnection() {
+            if (!currentToken) {
+                document.getElementById('result').innerHTML = '<div class="error">❌ Please generate a token first</div>';
+                return;
+            }
+            
+            try {
+                document.getElementById('result').innerHTML = '<div class="success">⏳ Testing server connection...</div>';
+                
+                // Test health endpoint
+                const healthResponse = await fetch('/health');
+                const healthData = await healthResponse.json();
+                
+                // Test MCP endpoint with proper headers
+                let mcpStatus = "❌ Failed";
+                let mcpDetails = "";
+                try {
+                    const mcpResponse = await fetch('/mcp/', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json, text/event-stream',
+                            'Authorization': `Bearer ${currentToken}`
+                        },
+                        body: JSON.stringify({
+                            jsonrpc: "2.0",
+                            id: 1,
+                            method: "initialize",
+                            params: {
+                                protocolVersion: "2024-11-05",
+                                capabilities: {
+                                    roots: { listChanged: false },
+                                    sampling: {}
+                                },
+                                clientInfo: { name: "OAuth Fix Page", version: "1.0.0" }
+                            }
+                        })
+                    });
+                    
+                    if (mcpResponse.ok) {
+                        mcpStatus = "✅ Connected";
+                        const mcpData = await mcpResponse.json();
+                        mcpDetails = `<br>Protocol: ${mcpData.result?.protocolVersion || 'Unknown'}`;
+                    } else {
+                        mcpDetails = `<br>Error: ${mcpResponse.status} ${mcpResponse.statusText}`;
+                    }
+                } catch (mcpError) {
+                    mcpDetails = `<br>Error: ${mcpError.message}`;
+                }
+                
+                document.getElementById('testResults').innerHTML = `
+                    <div class="success">✅ Server Status: ${healthData.status}</div>
+                    <div>🕒 Server Time: ${healthData.timestamp}</div>
+                    <div>🔧 Mode: ${healthData.mode}</div>
+                    <div>📝 OAuth Registration: ${healthData.supports_dynamic_client_registration ? 'Supported' : 'Not Supported'}</div>
+                    <div>🔌 MCP Connection: ${mcpStatus}${mcpDetails}</div>
+                `;
+                
+                document.getElementById('testSection').style.display = 'block';
+                document.getElementById('result').innerHTML = '<div class="success">✅ Server connection test completed!</div>';
+                
+            } catch (error) {
+                document.getElementById('result').innerHTML = `<div class="error">❌ Connection test failed: ${error.message}</div>`;
+            }
+        }
+        
+        function copyToken() {
+            if (currentToken) {
+                navigator.clipboard.writeText(currentToken).then(() => {
+                    alert('Token copied to clipboard!');
+                }).catch(() => {
+                    // Fallback for older browsers
+                    const textArea = document.createElement('textarea');
+                    textArea.value = currentToken;
+                    document.body.appendChild(textArea);
+                    textArea.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(textArea);
+                    alert('Token copied to clipboard!');
+                });
+            }
+        }
+    </script>
+</body>
+</html>

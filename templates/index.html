@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Remote MCP Server - OAuth Authentication</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            max-width: 500px;
+            width: 100%;
+            text-align: center;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+        .auth-button {
+            background: #24292e;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 1.1em;
+            border-radius: 8px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            margin: 20px 0;
+            transition: background 0.3s;
+        }
+        .auth-button:hover {
+            background: #1b1f23;
+        }
+        .info {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 30px;
+            text-align: left;
+        }
+        .info h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        .info ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+        .info li {
+            margin: 5px 0;
+            color: #666;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        .token-display {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            font-family: monospace;
+            word-break: break-all;
+            border: 1px solid #dee2e6;
+        }
+        .endpoints {
+            margin-top: 30px;
+            text-align: left;
+        }
+        .endpoints h3 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+        .endpoint {
+            background: #f8f9fa;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 6px;
+            font-family: monospace;
+            border-left: 4px solid #007bff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔐 Remote MCP Server</h1>
+        <p class="subtitle">OAuth 2.0 Authentication with GitHub</p>
+        
+        <div id="auth-section">
+            <p>Authenticate with GitHub to access the MCP server tools and resources.</p>
+            <a href="/oauth/authorize" class="auth-button">
+                🔗 Authenticate with GitHub
+            </a>
+        </div>
+        
+        <div class="info">
+            <h3>Available MCP Tools:</h3>
+            <ul>
+                <li><strong>save_note</strong> - Save notes with title, content, and tags</li>
+                <li><strong>get_notes</strong> - Retrieve notes, optionally filtered by tag</li>
+            </ul>
+            
+            <h3>Available MCP Resources:</h3>
+            <ul>
+                <li><strong>notes://list</strong> - List all saved notes</li>
+                <li><strong>notes://stats</strong> - Get notes statistics</li>
+            </ul>
+        </div>
+        
+        <div class="endpoints">
+            <h3>API Endpoints:</h3>
+            <div class="endpoint">POST /mcp/call_tool</div>
+            <div class="endpoint">GET /mcp/tools</div>
+            <div class="endpoint">GET /mcp/resources</div>
+            <div class="endpoint">GET /mcp/resources/{resource_uri}</div>
+            <div class="endpoint">GET /.well-known/oauth-protected-resource</div>
+            <div class="endpoint">GET /.well-known/oauth-authorization-server</div>
+        </div>
+    </div>
+    
+    <script>
+        // Check if we're on the callback page
+        const urlParams = new URLSearchParams(window.location.search);
+        const code = urlParams.get('code');
+        const error = urlParams.get('error');
+        
+        if (error) {
+            document.getElementById('auth-section').innerHTML = `
+                <div class="error">
+                    <h3>Authentication Error</h3>
+                    <p>OAuth error: ${error}</p>
+                    <a href="/oauth/authorize" class="auth-button">Try Again</a>
+                </div>
+            `;
+        } else if (code) {
+            document.getElementById('auth-section').innerHTML = `
+                <div class="success">
+                    <h3>Authentication Successful!</h3>
+                    <p>Authorization code received. You can now use the MCP server.</p>
+                    <p>Check the server response for your access token.</p>
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>

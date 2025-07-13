@@ -1,0 +1,56 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "fastmcp-notes-server"
+version = "2.0.0"
+description = "FastMCP 2.0 Notes Server with OAuth 2.0 Authentication"
+authors = [
+    {name = "Your Name", email = "your.email@example.com"},
+]
+dependencies = [
+    "fastmcp>=2.0.0",
+    "httpx>=0.25.0",
+    "python-dotenv>=1.0.0",
+    "pydantic>=2.0.0",
+    "starlette>=0.27.0",
+    "jinja2>=3.0.0",
+]
+requires-python = ">=3.10"
+readme = "README_FASTMCP.md"
+license = {text = "MIT"}
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-asyncio>=0.21.0",
+    "black>=23.0.0",
+    "isort>=5.0.0",
+    "flake8>=6.0.0",
+    "mypy>=1.0.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/yourusername/fastmcp-notes-server"
+Repository = "https://github.com/yourusername/fastmcp-notes-server"
+
+[project.scripts]
+fastmcp-notes-server = "fastmcp_server:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["fastmcp_server.py"]
+
+[tool.black]
+line-length = 100
+target-version = ['py310']
+
+[tool.isort]
+profile = "black"
+line_length = 100
+
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
